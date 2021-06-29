@@ -157,7 +157,6 @@ Cypress.Commands.add("loginByXstate", (username, password = Cypress.env("default
   });
 
   cy.intercept("POST", "/login").as("loginUser");
-  cy.intercept("GET", "/checkAuth").as("getUserProfile");
   cy.visit("/signin", { log: false }).then(() => {
     log.snapshot("before");
   });
