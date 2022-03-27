@@ -42,7 +42,8 @@
     "shortid": "2.2.16",
     "uuid": "8.3.2",
     "xstate": "4.20.0",
-    "yup": "0.32.9"
+    "yup": "0.32.9",
+    "@snyk/protect": "latest"
   },
   "devDependencies": {
     "@cypress/code-coverage": "3.9.7",
@@ -171,7 +172,9 @@
     "eject": "react-scripts eject",
     "codesandbox:start:api": "yarn tsnode:not-instrumented --files backend/app.ts",
     "codesandbox:start": "NODE_ENV=development TSC_COMPILE_ON_ERROR=true concurrently \"react-scripts start\" yarn:start:api:codesandbox",
-    "postinstall": "husky install"
+    "postinstall": "husky install",
+    "prepare": "yarn run snyk-protect",
+    "snyk-protect": "snyk-protect"
   },
   "eslintConfig": {
     "env": {
@@ -229,5 +232,6 @@
       "html",
       "json"
     ]
-  }
+  },
+  "snyk": true
 }
