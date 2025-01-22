@@ -13,6 +13,11 @@ type TestNotificationsCtx = {
 describe("Notifications API", function () {
   let ctx: TestNotificationsCtx = {};
 
+  before(() => {
+    // Hacky workaround to have the e2e tests pass when cy.visit('http://localhost:3000') is called
+    cy.request("GET", "/");
+  });
+
   beforeEach(function () {
     cy.task("db:seed");
 
@@ -85,7 +90,7 @@ describe("Notifications API", function () {
       });
     });
 
-    it("error when invalid field sent", function () {
+    it("errors when invalid field sent", function () {
       cy.request({
         method: "PATCH",
         url: `${apiNotifications}/${ctx.notificationId}`,

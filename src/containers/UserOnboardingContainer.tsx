@@ -10,28 +10,40 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-} from "@material-ui/core";
-import { Interpreter } from "xstate";
+} from "@mui/material";
+import {
+  BaseActionObject,
+  Interpreter,
+  ResolveTypegenMeta,
+  ServiceMap,
+  TypegenDisabled,
+} from "xstate";
 import { isEmpty } from "lodash/fp";
-import { useService, useMachine } from "@xstate/react";
+import { useActor, useMachine } from "@xstate/react";
 
 import { userOnboardingMachine } from "../machines/userOnboardingMachine";
 import BankAccountForm from "../components/BankAccountForm";
-import { DataContext, DataEvents } from "../machines/dataMachine";
-import { AuthMachineContext, AuthMachineEvents } from "../machines/authMachine";
+import { DataContext, DataEvents, DataSchema } from "../machines/dataMachine";
+import { AuthMachineContext, AuthMachineEvents, AuthMachineSchema } from "../machines/authMachine";
 import NavigatorIllustration from "../components/SvgUndrawNavigatorA479";
 import PersonalFinance from "../components/SvgUndrawPersonalFinanceTqcd";
 
 export interface Props {
-  authService: Interpreter<AuthMachineContext, any, AuthMachineEvents, any>;
-  bankAccountsService: Interpreter<DataContext, any, DataEvents, any>;
+  authService: Interpreter<AuthMachineContext, AuthMachineSchema, AuthMachineEvents, any, any>;
+  bankAccountsService: Interpreter<
+    DataContext,
+    DataSchema,
+    DataEvents,
+    any,
+    ResolveTypegenMeta<TypegenDisabled, DataEvents, BaseActionObject, ServiceMap>
+  >;
 }
 
 const UserOnboardingContainer: React.FC<Props> = ({ authService, bankAccountsService }) => {
   const theme = useTheme();
-  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
-  const [bankAccountsState, sendBankAccounts] = useService(bankAccountsService);
-  const [authState, sendAuth] = useService(authService);
+  const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
+  const [bankAccountsState, sendBankAccounts] = useActor(bankAccountsService);
+  const [authState, sendAuth] = useActor(authService);
   const [userOnboardingState, sendUserOnboarding] = useMachine(userOnboardingMachine);
 
   const currentUser = authState?.context?.user;
@@ -100,7 +112,7 @@ const UserOnboardingContainer: React.FC<Props> = ({ authService, bankAccountsSer
         </Box>
       </DialogContent>
       <DialogActions>
-        <Grid container justify="space-between">
+        <Grid container justifyContent="space-between">
           <Grid item>
             <Button
               style={{ paddingRight: "80%" }}

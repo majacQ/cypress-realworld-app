@@ -10,6 +10,11 @@ type TestContactsCtx = {
 describe("Contacts API", function () {
   let ctx: TestContactsCtx = {};
 
+  before(() => {
+    // Hacky workaround to have the e2e tests pass when cy.visit('http://localhost:3000') is called
+    cy.request("GET", "/");
+  });
+
   beforeEach(function () {
     cy.task("db:seed");
 
@@ -48,7 +53,7 @@ describe("Contacts API", function () {
       });
     });
 
-    it("error when invalid contactUserId", function () {
+    it("errors when invalid contactUserId", function () {
       cy.request({
         method: "POST",
         url: `${apiContacts}`,
@@ -58,7 +63,7 @@ describe("Contacts API", function () {
         },
       }).then((response) => {
         expect(response.status).to.eq(422);
-        expect(response.body.errors.length).to.eq(1);
+        expect(response.body.errors).to.be.an("array").that.has.length(1);
       });
     });
   });

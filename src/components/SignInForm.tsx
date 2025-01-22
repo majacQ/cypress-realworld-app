@@ -1,6 +1,7 @@
 import React from "react";
+import { styled } from "@mui/material/styles";
 import { Interpreter } from "xstate";
-import { useService } from "@xstate/react";
+import { useActor } from "@xstate/react";
 import { Link } from "react-router-dom";
 import {
   Button,
@@ -11,17 +12,16 @@ import {
   Grid,
   Box,
   Typography,
-  makeStyles,
   Container,
-} from "@material-ui/core";
+} from "@mui/material";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { string, object } from "yup";
 
 import RWALogo from "./SvgRwaLogo";
 import Footer from "./Footer";
 import { SignInPayload } from "../models";
-import { AuthMachineContext, AuthMachineEvents } from "../machines/authMachine";
-import { Alert } from "@material-ui/lab";
+import { AuthMachineContext, AuthMachineEvents, AuthMachineSchema } from "../machines/authMachine";
+import { Alert } from "@mui/material";
 
 const validationSchema = object({
   username: string().required("Username is required"),
@@ -30,35 +30,48 @@ const validationSchema = object({
     .required("Enter your password"),
 });
 
-const useStyles = makeStyles((theme) => ({
-  paper: {
+const PREFIX = "SignInForm";
+
+const classes = {
+  paper: `${PREFIX}-paper`,
+  logo: `${PREFIX}-logo`,
+  form: `${PREFIX}-form`,
+  submit: `${PREFIX}-submit`,
+  alertMessage: `${PREFIX}-alertMessage`,
+};
+
+const StyledContainer = styled(Container)(({ theme }) => ({
+  [`& .${classes.paper}`]: {
     marginTop: theme.spacing(8),
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
   },
-  logo: {
+
+  [`& .${classes.logo}`]: {
     color: theme.palette.primary.main,
   },
-  form: {
+
+  [`& .${classes.form}`]: {
     width: "100%", // Fix IE 11 issue.
     marginTop: theme.spacing(1),
   },
-  submit: {
+
+  [`& .${classes.submit}`]: {
     margin: theme.spacing(3, 0, 2),
   },
-  alertMessage: {
+
+  [`& .${classes.alertMessage}`]: {
     marginBottom: theme.spacing(2),
   },
-}));
+})) as typeof Container;
 
 export interface Props {
-  authService: Interpreter<AuthMachineContext, any, AuthMachineEvents, any>;
+  authService: Interpreter<AuthMachineContext, AuthMachineSchema, AuthMachineEvents, any, any>;
 }
 
 const SignInForm: React.FC<Props> = ({ authService }) => {
-  const classes = useStyles();
-  const [authState, sendAuth] = useService(authService);
+  const [authState, sendAuth] = useActor(authService);
   const initialValues: SignInPayload = {
     username: "",
     password: "",
@@ -68,7 +81,7 @@ const SignInForm: React.FC<Props> = ({ authService }) => {
   const signInPending = (payload: SignInPayload) => sendAuth({ type: "LOGIN", ...payload });
 
   return (
-    <Container component="main" maxWidth="xs">
+    <StyledContainer component="main" maxWidth="xs">
       <CssBaseline />
       <div className={classes.paper}>
         {authState.context?.message && (
@@ -164,7 +177,7 @@ const SignInForm: React.FC<Props> = ({ authService }) => {
       <Box mt={8}>
         <Footer />
       </Box>
-    </Container>
+    </StyledContainer>
   );
 };
 

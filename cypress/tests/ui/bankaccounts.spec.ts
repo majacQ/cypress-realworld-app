@@ -16,18 +16,22 @@ describe("Bank Accounts", function () {
     cy.intercept("GET", "/notifications").as("getNotifications");
 
     cy.intercept("POST", apiGraphQL, (req) => {
+      const operationAliases: Record<string, string> = {
+        ListBankAccount: "gqlListBankAccountQuery",
+        CreateBankAccount: "gqlCreateBankAccountMutation",
+        DeleteBankAccount: "gqlDeleteBankAccountMutation",
+      };
+
       const { body } = req;
 
-      if (body.hasOwnProperty("operationName") && body.operationName === "ListBankAccount") {
-        req.alias = "gqlListBankAccountQuery";
-      }
+      const operationName = body?.operationName;
 
-      if (body.hasOwnProperty("operationName") && body.operationName === "CreateBankAccount") {
-        req.alias = "gqlCreateBankAccountMutation";
-      }
-
-      if (body.hasOwnProperty("operationName") && body.operationName === "DeleteBankAccount") {
-        req.alias = "gqlDeleteBankAccountMutation";
+      if (
+        body.hasOwnProperty("operationName") &&
+        operationName &&
+        operationAliases[operationName]
+      ) {
+        req.alias = operationAliases[operationName];
       }
     });
 
@@ -139,6 +143,7 @@ describe("Bank Accounts", function () {
 
   // TODO: [enhancement] the onboarding modal assertion can be removed after adding "onboarded" flag to user profile
   it("renders an empty bank account list state with onboarding modal", function () {
+    cy.wait("@getNotifications");
     cy.intercept("POST", apiGraphQL, (req) => {
       const { body } = req;
       if (body.hasOwnProperty("operationName") && body.operationName === "ListBankAccount") {
@@ -150,6 +155,7 @@ describe("Bank Accounts", function () {
     });
 
     cy.visit("/bankaccounts");
+    cy.wait("@getNotifications");
     cy.wait("@gqlListBankAccountQuery");
 
     cy.getBySel("bankaccount-list").should("not.exist");

@@ -8,17 +8,20 @@ on:
 jobs:
   install:
     runs-on: ubuntu-latest
-    container: cypress/browsers:node14.15.0-chrome86-ff82
+    container:
+      image: cypress/browsers:node-22.13.0-chrome-132.0.6834.83-1-ff-134.0.1-edge-131.0.2903.147-1
+      options: --user 1001
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Cypress install
-        uses: cypress-io/github-action@v2
+        uses: cypress-io/github-action@v6
         with:
           runTests: false
       # report machine parameters
       - run: yarn cypress info
+      - run: node --version
       - run: node -p 'os.cpus()'
       - run: yarn types
       - run: yarn lint
@@ -26,32 +29,7 @@ jobs:
       - run: yarn build:ci
 
       - name: Save build folder
-        uses: actions/upload-artifact@v2
-        with:
-          name: build
-          if-no-files-found: error
-          path: build
-
-  install-windows:
-    runs-on: windows-2019
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Cypress install
-        uses: cypress-io/github-action@v2
-        with:
-          runTests: false
-      # report machine parameters
-      - run: yarn cypress info
-      - run: node -p 'os.cpus()'
-      - run: yarn types
-      - run: yarn lint
-      - run: yarn test:unit:ci
-      - run: yarn build:ci
-
-      - name: Save build folder
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: build
           if-no-files-found: error
@@ -60,12 +38,14 @@ jobs:
   ui-chrome-tests:
     timeout-minutes: 15
     runs-on: ubuntu-latest
-    container: cypress/browsers:node14.15.0-chrome86-ff82
+    container:
+      image: cypress/browsers:node-22.13.0-chrome-132.0.6834.83-1-ff-134.0.1-edge-131.0.2903.147-1
+      options: --user 1001
     needs: install
     strategy:
       # when one test fails, DO NOT cancel the other
       # containers, because this will kill Cypress processes
-      # leaving the Dashboard hanging ...
+      # leaving Cypress Cloud hanging ...
       # https://github.com/cypress-io/github-action/issues/48
       fail-fast: false
       matrix:
@@ -73,17 +53,24 @@ jobs:
         containers: [1, 2, 3, 4, 5]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Download the build folders
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: build
           path: build
 
+      - name: Node info
+        run: node -v
+
+      - name: __e Dir
+        run: ls /__e
+
       - name: "UI Tests - Chrome"
-        uses: cypress-io/github-action@v2
+        uses: cypress-io/github-action@v6
         with:
+          build: yarn cypress info
           start: yarn start:ci
           wait-on: "http://localhost:3000"
           wait-on-timeout: 120
@@ -92,22 +79,26 @@ jobs:
           parallel: true
           group: "UI - Chrome"
           spec: cypress/tests/ui/*
+          config-file: cypress.config.ts
         env:
           CYPRESS_PROJECT_ID: ${{ secrets.CYPRESS_PROJECT_ID }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           # Recommended: pass the GitHub token lets this action correctly
           # determine the unique run id necessary to re-run the checks
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEBUG: "cypress:server:args"
 
   ui-chrome-mobile-tests:
     timeout-minutes: 15
     runs-on: ubuntu-latest
-    container: cypress/browsers:node14.15.0-chrome86-ff82
+    container:
+      image: cypress/browsers:node-22.13.0-chrome-132.0.6834.83-1-ff-134.0.1-edge-131.0.2903.147-1
+      options: --user 1001
     needs: install
     strategy:
       # when one test fails, DO NOT cancel the other
       # containers, because this will kill Cypress processes
-      # leaving the Dashboard hanging ...
+      # leaving Cypress Cloud hanging ...
       # https://github.com/cypress-io/github-action/issues/48
       fail-fast: false
       matrix:
@@ -115,18 +106,18 @@ jobs:
         containers: [1, 2, 3, 4, 5]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Download the build folders
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: build
           path: build
 
       - name: "UI Tests - Chrome - Mobile"
-        uses: cypress-io/github-action@v2
+        uses: cypress-io/github-action@v6
         with:
-          config: "viewportWidth=375,viewportHeight=667"
+          config: '{"e2e":{"viewportWidth":375,"viewportHeight":667}}'
           start: yarn start:ci
           wait-on: "http://localhost:3000"
           wait-on-timeout: 120
@@ -135,6 +126,7 @@ jobs:
           parallel: true
           group: "UI - Chrome - Mobile"
           spec: cypress/tests/ui/*
+          config-file: cypress.config.ts
         env:
           CYPRESS_PROJECT_ID: ${{ secrets.CYPRESS_PROJECT_ID }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
@@ -146,13 +138,13 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     container:
-      image: cypress/browsers:node14.15.0-chrome86-ff82
+      image: cypress/browsers:node-22.13.0-chrome-132.0.6834.83-1-ff-134.0.1-edge-131.0.2903.147-1
       options: --user 1001
     needs: install
     strategy:
       # when one test fails, DO NOT cancel the other
       # containers, because this will kill Cypress processes
-      # leaving the Dashboard hanging ...
+      # leaving Cypress Cloud hanging ...
       # https://github.com/cypress-io/github-action/issues/48
       fail-fast: false
       matrix:
@@ -160,16 +152,16 @@ jobs:
         containers: [1, 2, 3, 4, 5]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Download the build folders
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: build
           path: build
 
       - name: "UI Tests - Firefox"
-        uses: cypress-io/github-action@v2
+        uses: cypress-io/github-action@v6
         with:
           start: yarn start:ci
           wait-on: "http://localhost:3000"
@@ -179,6 +171,7 @@ jobs:
           parallel: true
           group: "UI - Firefox"
           spec: cypress/tests/ui/*
+          config-file: cypress.config.ts
         env:
           CYPRESS_PROJECT_ID: ${{ secrets.CYPRESS_PROJECT_ID }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
@@ -190,13 +183,13 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     container:
-      image: cypress/browsers:node14.15.0-chrome86-ff82
+      image: cypress/browsers:node-22.13.0-chrome-132.0.6834.83-1-ff-134.0.1-edge-131.0.2903.147-1
       options: --user 1001
     needs: install
     strategy:
       # when one test fails, DO NOT cancel the other
       # containers, because this will kill Cypress processes
-      # leaving the Dashboard hanging ...
+      # leaving Cypress Cloud hanging ...
       # https://github.com/cypress-io/github-action/issues/48
       fail-fast: false
       matrix:
@@ -204,18 +197,18 @@ jobs:
         containers: [1, 2, 3, 4, 5]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Download the build folders
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: build
           path: build
 
       - name: "UI Tests - Firefox - Mobile"
-        uses: cypress-io/github-action@v2
+        uses: cypress-io/github-action@v6
         with:
-          config: "viewportWidth=375,viewportHeight=667"
+          config: '{"e2e":{"viewportWidth":375,"viewportHeight":667}}'
           start: yarn start:ci
           wait-on: "http://localhost:3000"
           wait-on-timeout: 120
@@ -224,46 +217,7 @@ jobs:
           parallel: true
           group: "UI - Firefox - Mobile"
           spec: cypress/tests/ui/*
-        env:
-          CYPRESS_PROJECT_ID: ${{ secrets.CYPRESS_PROJECT_ID }}
-          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-          # Recommended: pass the GitHub token lets this action correctly
-          # determine the unique run id necessary to re-run the checks
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  ui-windows-tests:
-    timeout-minutes: 40
-    runs-on: windows-2019
-    needs: install-windows
-    strategy:
-      # when one test fails, DO NOT cancel the other
-      # containers, because this will kill Cypress processes
-      # leaving the Dashboard hanging ...
-      # https://github.com/cypress-io/github-action/issues/48
-      fail-fast: false
-      matrix:
-        # run copies of the current job in parallel
-        containers: [1, 2, 3, 4, 5]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Download the build folders
-        uses: actions/download-artifact@v2
-        with:
-          name: build
-          path: build
-
-      - name: "UI Tests - Electron - Windows"
-        uses: cypress-io/github-action@v2
-        with:
-          start: yarn start:ci
-          wait-on: "http://localhost:3000"
-          wait-on-timeout: 120
-          record: true
-          parallel: true
-          group: "UI - Electron - Windows"
-          spec: cypress/tests/ui/*
+          config-file: cypress.config.ts
         env:
           CYPRESS_PROJECT_ID: ${{ secrets.CYPRESS_PROJECT_ID }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}

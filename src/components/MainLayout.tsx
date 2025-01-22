@@ -1,34 +1,52 @@
 import React, { useEffect } from "react";
+import { styled } from "@mui/material/styles";
 import { useMachine } from "@xstate/react";
-import { Interpreter } from "xstate";
-import { makeStyles, Container, Grid, useMediaQuery, useTheme } from "@material-ui/core";
+import {
+  BaseActionObject,
+  Interpreter,
+  ResolveTypegenMeta,
+  ServiceMap,
+  TypegenDisabled,
+} from "xstate";
+import { Container, Grid, useMediaQuery, useTheme } from "@mui/material";
 
 import Footer from "./Footer";
 import NavBar from "./NavBar";
 import NavDrawer from "./NavDrawer";
-import { DataContext, DataEvents } from "../machines/dataMachine";
-import { AuthMachineContext, AuthMachineEvents } from "../machines/authMachine";
+import { DataContext, DataEvents, DataSchema } from "../machines/dataMachine";
+import { AuthMachineContext, AuthMachineEvents, AuthMachineSchema } from "../machines/authMachine";
 import { drawerMachine } from "../machines/drawerMachine";
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    display: "flex",
-  },
-  toolbar: {
+const PREFIX = "MainLayout";
+
+const classes = {
+  toolbar: `${PREFIX}-toolbar`,
+  appBarSpacer: `${PREFIX}-appBarSpacer`,
+  content: `${PREFIX}-content`,
+  container: `${PREFIX}-container`,
+};
+// TODO jss-to-styled codemod: The Fragment root was replaced by div. Change the tag if needed.
+const Root = styled("div")(({ theme }) => ({
+  [`&`]: { display: "flex", flexGrow: 1 },
+
+  [`& .${classes.toolbar}`]: {
     paddingRight: 24, // keep right padding when drawer closed
   },
-  appBarSpacer: {
+
+  [`& .${classes.appBarSpacer}`]: {
     minHeight: theme.spacing(13),
     [theme.breakpoints.up("sm")]: {
       minHeight: theme.spacing(14),
     },
   },
-  content: {
+
+  [`& .${classes.content}`]: {
     flexGrow: 1,
     height: "100vh",
     overflow: "auto",
   },
-  container: {
+
+  [`& .${classes.container}`]: {
     minHeight: "77vh",
     paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(1),
@@ -41,12 +59,17 @@ const useStyles = makeStyles((theme) => ({
 
 interface Props {
   children: React.ReactNode;
-  authService: Interpreter<AuthMachineContext, any, AuthMachineEvents, any>;
-  notificationsService: Interpreter<DataContext, any, DataEvents, any>;
+  authService: Interpreter<AuthMachineContext, AuthMachineSchema, AuthMachineEvents, any, any>;
+  notificationsService: Interpreter<
+    DataContext,
+    DataSchema,
+    DataEvents,
+    any,
+    ResolveTypegenMeta<TypegenDisabled, DataEvents, BaseActionObject, ServiceMap>
+  >;
 }
 
 const MainLayout: React.FC<Props> = ({ children, notificationsService, authService }) => {
-  const classes = useStyles();
   const theme = useTheme();
   const [drawerState, sendDrawer] = useMachine(drawerMachine);
 
@@ -73,7 +96,7 @@ const MainLayout: React.FC<Props> = ({ children, notificationsService, authServi
   }, [aboveSmallBreakpoint, desktopDrawerOpen]);
 
   return (
-    <>
+    <Root>
       <NavBar
         toggleDrawer={xsBreakpoint ? toggleMobileDrawer : toggleDesktopDrawer}
         drawerOpen={xsBreakpoint ? mobileDrawerOpen : desktopDrawerOpen}
@@ -98,7 +121,7 @@ const MainLayout: React.FC<Props> = ({ children, notificationsService, authServi
           <Footer />
         </footer>
       </main>
-    </>
+    </Root>
   );
 };
 
